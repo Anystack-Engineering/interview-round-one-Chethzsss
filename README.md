@@ -135,3 +135,52 @@ A repo containing:
 - ✅ Edge-case coverage (invalid email, empty lines, non-positive qty/price)  
 - ✅ Clean code & structure in tests (naming, small helpers OK)  
 - ✅ Bonus: property-based tests, schema validation (e.g., JSON Schema), or parameterized tests
+
+---
+
+## This Solution: Python + pytest
+
+### Prerequisites
+- Python 3.10+
+
+### Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### Run tests
+```bash
+pytest -q
+```
+
+On Windows PowerShell, use `;` to chain commands (not `&&`). Example:
+```powershell
+cd "D:\Projects\AnyStack Engineering\interview-round-one-Chethzsss"; pytest -q
+```
+
+### What the tests cover
+- Presence & format validations using JSONPath selectors (`jsonpath-ng`) combined with small Python helpers:
+  - Non-empty `id`, valid `status` in {PAID, PENDING, CANCELLED}
+  - Email presence/regex check: `^[^@\s]+@[^@\s]+\.[^@\s]+$`
+  - `lines` non-empty for PAID|PENDING, each line has `sku`, `qty > 0`, `price ≥ 0`
+  - PAID ⇒ `payment.captured == true`
+  - CANCELLED refund equals sum of `qty × price` (shipping excluded)
+  - Shipping `fee ≥ 0`
+- Extraction & aggregation with exact assertions:
+  - Order IDs, total line items, top-2 SKUs by quantity, GMV per order
+  - Orders with missing/invalid emails, paid orders uncaptured, cancelled with correct refund
+- Reporting: one test prints a JSON summary of totals and problematic orders with reasons
+
+### Notes on JSONPath usage
+- `jsonpath-ng` does not support filter predicates like `?(@.status=='PAID')` reliably in all environments. In this suite, we use JSONPath to select collections (e.g., `$.orders[*]`) and perform filtering in Python for compatibility and clarity.
+
+### Troubleshooting
+- Import errors (`pytest`, `jsonpath_ng`): ensure you ran `pip install -r requirements.txt` in the same Python environment.
+- PowerShell errors about `&&`: use `;` between commands.
+- If tests fail: this suite intentionally asserts exact expected results for the provided dataset. If you change `orders.json`, update the expected values in `tests/test_orders.py` accordingly.
+
+### File overview
+- `orders.json`: dataset
+- `tests/test_orders.py`: all tests (validations, aggregations, reporting)
+- `requirements.txt`: pinned minimal dependencies
+- `pytest.ini`: pytest config
